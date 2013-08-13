@@ -1,5 +1,7 @@
 /*************************************************************************
-*  Copyright (C) 2010 by Emanuele Catalano <catalano@grenoble-inp.fr>    *
+*  Copyright (C) 2009 by Emanuele Catalano <catalano@grenoble-inp.fr>    *
+*  Copyright (C) 2009 by Bruno Chareyre <bruno.chareyre@hmg.inpg.fr>     *
+*  Copyright (C) 2012 by Donia Marzougui <donia.marzougui@grenoble-inp.fr>*
 *                                                                        *
 *  This program is free software; it is licensed under the terms of the  *
 *  GNU General Public License v2 or later. See file LICENSE for details. *
@@ -94,6 +96,7 @@ FlowBoundingSphere<Tesselation>::FlowBoundingSphere()
 	minKdivKmean=0.0001;
 	maxKdivKmean=100.;
 	ompThreads=1;
+	errorCode=0;
 }
 
 template <class Tesselation> 
@@ -784,8 +787,8 @@ void FlowBoundingSphere<Tesselation>::Compute_Permeability()
 				
 				if(permeability_map){
 				  Cell_handle c = cell;
-				  cell->info().s = cell->info().s + k*distance/fluidArea*Volume_Pore_VoronoiFraction (c,j);
-				  volume_sub_pore += Volume_Pore_VoronoiFraction (c,j);}
+				  cell->info().s = cell->info().s + k*distance/fluidArea*this->Volume_Pore_VoronoiFraction (c,j);
+				  volume_sub_pore += this->Volume_Pore_VoronoiFraction (c,j);}
 				
 			}
 		}
@@ -894,8 +897,13 @@ vector<double> FlowBoundingSphere<Tesselation>::getConstrictions()
 {
 	RTriangulation& Tri = T[currentTes].Triangulation();
 	vector<double> constrictions;
-	for (Finite_facets_iterator f_it=Tri.finite_facets_begin(); f_it != Tri.finite_facets_end();f_it++)
+	for (Finite_facets_iterator f_it=Tri.finite_facets_begin(); f_it != Tri.finite_facets_end();f_it++){
+		//in the periodic case, we skip facets with lowest id out of the base period
+		if ( ((f_it->first->info().index < f_it->first->neighbor(f_it->second)->info().index) && f_it->first->info().isGhost)
+		||  ((f_it->first->info().index > f_it->first->neighbor(f_it->second)->info().index) && f_it->first->neighbor(f_it->second)->info().isGhost)
+		|| f_it->first->info().index == 0 || f_it->first->neighbor(f_it->second)->info().index == 0) continue;
 		constrictions.push_back(Compute_EffectiveRadius(f_it->first, f_it->second));
+	}
 	return constrictions;
 }
 
@@ -905,6 +913,10 @@ vector<Constriction> FlowBoundingSphere<Tesselation>::getConstrictionsFull()
 	RTriangulation& Tri = T[currentTes].Triangulation();
 	vector<Constriction> constrictions;
 	for (Finite_facets_iterator f_it=Tri.finite_facets_begin(); f_it != Tri.finite_facets_end();f_it++){
+		//in the periodic case, we skip facets with lowest id out of the base period
+ 		 if ( ((f_it->first->info().index < f_it->first->neighbor(f_it->second)->info().index) && f_it->first->info().isGhost)
+		||  ((f_it->first->info().index > f_it->first->neighbor(f_it->second)->info().index) && f_it->first->neighbor(f_it->second)->info().isGhost)
+		|| f_it->first->info().index == 0 || f_it->first->neighbor(f_it->second)->info().index == 0) continue;
 		vector<double> rn;
 		const Vecteur& normal = f_it->first->info().facetSurfaces[f_it->second];
 		if (!normal[0] && !normal[1] && !normal[2]) continue;
@@ -928,7 +940,7 @@ double FlowBoundingSphere<Tesselation>::Compute_EffectiveRadius(Cell_handle cell
 	Vecteur x = B/sqrt(B.squared_length());
 	Vecteur C = cell->vertex(facetVertices[j][2])->point().point()-cell->vertex(facetVertices[j][0])->point().point();
 	Vecteur z = CGAL::cross_product(x,C);
-	z = z/sqrt(z.squared_length());
+// 	z = z/sqrt(z.squared_length());
 	Vecteur y = CGAL::cross_product(x,z);
 	y = y/sqrt(y.squared_length());
 
@@ -952,9 +964,12 @@ double FlowBoundingSphere<Tesselation>::Compute_EffectiveRadius(Cell_handle cell
 
 	if ((pow(b,2)-4*a*c)<0){cout << "NEGATIVE DETERMINANT" << endl; }
 	double reff = (-b+sqrt(pow(b,2)-4*a*c))/(2*a);
-	if (reff<0 || reff==0) {cout << "reff1 = " << reff << endl; reff = (-b-sqrt(pow(b,2)-4*a*c))/(2*a); cout << endl << "reff2 = " << reff << endl;return reff;} else
-	return reff;
+	if (reff<0) return 0;//happens very rarely, with bounding spheres most probably
+	//if the facet involves one ore more bounding sphere, we return R with a minus sign
+	if (cell->vertex(facetVertices[j][2])->info().isFictious || cell->vertex(facetVertices[j][1])->info().isFictious || cell->vertex(facetVertices[j][2])->info().isFictious) return -reff;
+	else return reff;
 }
+
 template <class Tesselation> 
 double FlowBoundingSphere<Tesselation>::Compute_EquivalentRadius(Cell_handle cell, int j)
 {
@@ -967,8 +982,8 @@ double FlowBoundingSphere<Tesselation>::Compute_HydraulicRadius(Cell_handle cell
 	RTriangulation& Tri = T[currentTes].Triangulation();
         if (Tri.is_infinite(cell->neighbor(j))) return 0;
 
-        double Vpore = Volume_Pore_VoronoiFraction(cell, j);
-	double Ssolid = Surface_Solid_Pore(cell, j, SLIP_ON_LATERALS);
+        double Vpore = this->Volume_Pore_VoronoiFraction(cell, j);
+	double Ssolid = this->Surface_Solid_Pore(cell, j, SLIP_ON_LATERALS);
 
 	//handle symmetry (tested ok)
 	if (SLIP_ON_LATERALS && fictious_vertex>0) {
@@ -1614,6 +1629,14 @@ template <class Tesselation>
 void  FlowBoundingSphere<Tesselation>::computeEdgesSurfaces()
 {
   RTriangulation& Tri = T[currentTes].Triangulation();
+
+  //first, copy interacting pairs and normal lub forces form prev. triangulation in a sorted structure for initializing the new lub. Forces
+  vector<vector<pair<unsigned int,Real> > > lubPairs;
+  lubPairs.resize(Tri.number_of_vertices()+1);
+  for (unsigned int k=0; k<edgeNormalLubF.size(); k++)
+	lubPairs[min(Edge_ids[k].first,Edge_ids[k].second)].push_back(pair<int,Real> (max(Edge_ids[k].first,Edge_ids[k].second),edgeNormalLubF[k]));
+
+  //Now we reset the containers and initialize them
   Edge_Surfaces.clear(); Edge_ids.clear(); edgeNormalLubF.clear();
   Finite_edges_iterator ed_it;
   for ( Finite_edges_iterator ed_it = Tri.finite_edges_begin(); ed_it!=Tri.finite_edges_end();ed_it++ )
@@ -1622,12 +1645,26 @@ void  FlowBoundingSphere<Tesselation>::computeEdgesSurfaces()
     if (hasFictious==2) continue;
     double area = T[currentTes].ComputeVFacetArea(ed_it);
     Edge_Surfaces.push_back(area);
-    int id1 = (ed_it->first)->vertex(ed_it->second)->info().id();
-    int id2 = (ed_it->first)->vertex(ed_it->third)->info().id();
+    unsigned int id1 = (ed_it->first)->vertex(ed_it->second)->info().id();
+    unsigned int id2 = (ed_it->first)->vertex(ed_it->third)->info().id();
     Edge_ids.push_back(pair<int,int>(id1,id2));
-    edgeNormalLubF.push_back(0);
+    
+    //For persistant edges, we must transfer the lub. force value from the older triangulation structure
+    if (id1>id2) swap(id1,id2);
+    unsigned int i=0;
+    //Look for the pair (id1,id2) in lubPairs
+    while (i<lubPairs[id1].size()) {
+		if (lubPairs[id1][i].first == id2) {
+			//it's found, we copy the lub force
+			edgeNormalLubF.push_back(lubPairs[id1][i].second);
+			break;}
+		++i;
+    }
+    // not found, we initialize with zero lub force
+    if (i==lubPairs[id1].size()) edgeNormalLubF.push_back(0);
   }
 }
+
 template <class Tesselation> 
 Vector3r FlowBoundingSphere<Tesselation>::computeViscousShearForce(const Vector3r& deltaV, const int& edge_id, const Real& Rh)
 {
@@ -1650,13 +1687,19 @@ Real FlowBoundingSphere<Tesselation>::computeNormalLubricationForce(const Real& 
 	Real d = max(dist,0.) + eps*meanRad;//account for grains roughness
 	if (stiffness>0) {
 		const Real k = stiffness*meanRad;
-		const Real prevForce = edgeNormalLubF[edge_id] ? edgeNormalLubF[edge_id] : (6*Mathr::PI*pow(meanRad,2)* VISCOSITY* deltaNormV)/d;
-		Real instantVisc = 6*Mathr::PI*pow(meanRad,2)*VISCOSITY/(d-prevForce/k);
+		Real prevForce = edgeNormalLubF[edge_id];
+// 		Real prevForce = edgeNormalLubF[edge_id] ? edgeNormalLubF[edge_id] : (6*Mathr::PI*pow(meanRad,2)* VISCOSITY* deltaNormV)/d;
+// 		if (!edgeNormalLubF[edge_id]) for (int kk=0; kk<30; kk++) {
+// 			Real instantVisc = 6*Mathr::PI*pow(meanRad,2)*VISCOSITY/(d-prevForce/k);
+// 			prevForce = instantVisc*(deltaNormV + prevForce/(k*dt))/(1+instantVisc/(k*dt));
+// 			if ((kk==0 || kk==29) && deltaNormV!=0) cerr << "prevForce("<<kk<<") = "<< prevForce<<endl;
+// 		}
+		Real instantVisc = 1.5*Mathr::PI*pow(meanRad,2)*VISCOSITY/(d-prevForce/k);
 		Real normLubF = instantVisc*(deltaNormV + prevForce/(k*dt))/(1+instantVisc/(k*dt));
 		edgeNormalLubF[edge_id]=normLubF;
 		return normLubF;
 	} else {
-		Real normLubF = (6*Mathr::PI*pow(meanRad,2)* VISCOSITY* deltaNormV)/d;
+		Real normLubF = (1.5*Mathr::PI*pow(meanRad,2)* VISCOSITY* deltaNormV)/d;
 		return normLubF;
 	}
 }

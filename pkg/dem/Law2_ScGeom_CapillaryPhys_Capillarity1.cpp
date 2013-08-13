@@ -83,6 +83,7 @@ class Meniscus {
         Meniscus() : data(), cell(DT::Cell_handle()), normals(std::vector<K::Vector_3>()) {}
 };
 
+
 void Law2_ScGeom_CapillaryPhys_Capillarity1::postLoad(Law2_ScGeom_CapillaryPhys_Capillarity1&){
   
  std::vector<MeniscusPhysicalData> solutions;
@@ -172,6 +173,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::postLoad(Law2_ScGeom_CapillaryPhys_
 // //   script.close();
 // //   return system( "gnuplot plotscript" ) ;
 // }
+
 YADE_PLUGIN((Law2_ScGeom_CapillaryPhys_Capillarity1));
 
 using namespace std;

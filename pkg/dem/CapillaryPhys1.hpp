@@ -32,10 +32,6 @@ class CapillaryPhys1 : public FrictPhys
 };
 REGISTER_SERIALIZABLE(CapillaryPhys1);
 
-
-
-
-
 // class EnergeticCapillaryPhys : public CapillaryPhys1
 // {
 // 	public :

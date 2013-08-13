@@ -51,12 +51,12 @@ py::list SpherePack::toList() const {
 };
 
 void SpherePack::fromFile(string file) {
-	typedef pair<Vector3r,Real> pairVector3rReal;
-	vector<pairVector3rReal> ss;
+	typedef tuple<Vector3r,Real,int> tupleVector3rRealInt;
+	vector<tupleVector3rRealInt> ss;
 	Vector3r mn,mx;
 	ss=Shop::loadSpheresFromFile(file,mn,mx,&cellSize);
 	pack.clear();
-	FOREACH(const pairVector3rReal& s, ss) pack.push_back(Sph(s.first,s.second));
+	FOREACH(const tupleVector3rRealInt& s, ss) pack.push_back(Sph(get<0>(s),get<1>(s),get<2>(s)));
 }
 
 void SpherePack::toFile(const string fname) const {
@@ -64,8 +64,8 @@ void SpherePack::toFile(const string fname) const {
 	if(!f.good()) throw runtime_error("Unable to open file `"+fname+"'");
 	if(cellSize!=Vector3r::Zero()){ f<<"##PERIODIC:: "<<cellSize[0]<<" "<<cellSize[1]<<" "<<cellSize[2]<<endl; }
 	FOREACH(const Sph& s, pack){
-		if(s.clumpId>=0) throw std::invalid_argument("SpherePack with clumps cannot be (currently) exported to a text file.");
-		f<<s.c[0]<<" "<<s.c[1]<<" "<<s.c[2]<<" "<<s.r<<endl;
+		//if(s.clumpId>=0) throw std::invalid_argument("SpherePack with clumps cannot be (currently) exported to a text file.");
+		f<<s.c[0]<<" "<<s.c[1]<<" "<<s.c[2]<<" "<<s.r<<" "<<s.clumpId<<endl;
 	}
 	f.close();
 };
@@ -426,7 +426,7 @@ long SpherePack::particleSD_2d(Vector2r mn, Vector2r mx, Real rMean, bool period
 	return pack.size();
 }
 
-long SpherePack::makeClumpCloud(const Vector3r& mn, const Vector3r& mx, const vector<shared_ptr<SpherePack> >& _clumps, bool periodic, int num){
+long SpherePack::makeClumpCloud(const Vector3r& mn, const Vector3r& mx, const vector<shared_ptr<SpherePack> >& _clumps, bool periodic, int num, int seed){
 	// recenter given clumps and compute their margins
 	vector<SpherePack> clumps; /* vector<Vector3r> margins; */ Vector3r boxMargins(Vector3r::Zero()); Real maxR=0;
 	vector<Real> boundRad; // squared radii of bounding sphere for each clump
@@ -448,19 +448,18 @@ long SpherePack::makeClumpCloud(const Vector3r& mn, const Vector3r& mx, const ve
 	const int maxTry=200;
 	int nGen=0; // number of clumps generated
 	// random point coordinate generator, with non-zero margins if aperiodic
-	static boost::minstd_rand randGen(TimingInfo::getNow(true));
-	typedef boost::variate_generator<boost::minstd_rand&, boost::uniform_real<> > UniRandGen;
-	static UniRandGen rndX(randGen,boost::uniform_real<>(mn[0],mx[0]));
-	static UniRandGen rndY(randGen,boost::uniform_real<>(mn[1],mx[1]));
-	static UniRandGen rndZ(randGen,boost::uniform_real<>(mn[2],mx[2]));
-	static UniRandGen rndUnit(randGen,boost::uniform_real<>(0,1));
+ 	static boost::minstd_rand randGen(seed!=0?seed:(int)TimingInfo::getNow(/* get the number even if timing is disabled globally */ true));
+ 	static boost::variate_generator<boost::minstd_rand&, boost::uniform_real<Real> > rnd(randGen, boost::uniform_real<Real>(0,1));
 	while(nGen<num || num<0){
-		int clumpChoice=rand()%clumps.size();
+		int clumpChoice=(int)(rnd()*(clumps.size()-1e-20));
 		int tries=0;
 		while(true){ // check for tries at the end
-			Vector3r pos(rndX(),rndY(),rndZ()); // random point
+			Vector3r pos(0.,0.,0.);
+			for(int i=0;i<3;i++){
+				pos[i]=rnd()*(mx[i]-mn[i])+mn[i];
+			}
 			// TODO: check this random orientation is homogeneously distributed
-			Quaternionr ori(rndUnit(),rndUnit(),rndUnit(),rndUnit()); ori.normalize();
+			Quaternionr ori(rnd(),rnd(),rnd(),rnd()); ori.normalize();
 			// copy the packing and rotate
 			SpherePack C(clumps[clumpChoice]); C.rotateAroundOrigin(ori); C.translate(pos);
 			const Real& rad(boundRad[clumpChoice]);
@@ -470,7 +469,7 @@ long SpherePack::makeClumpCloud(const Vector3r& mn, const Vector3r& mx, const ve
 			// check against bounding spheres of other clumps, and only check individual spheres if there is overlap
 			if(!periodic){
 				// check overlap with box margins first
-				if((pos+rad*Vector3r::Ones()).cwise().max(mx)!=mx || (pos-rad*Vector3r::Ones()).cwise().min(mn)!=mn){ FOREACH(const Sph& s, C.pack) if((s.c+s.r*Vector3r::Ones()).cwise().max(mx)!=mx || (s.c-s.r*Vector3r::Ones()).cwise().min(mn)!=mn) goto overlap; }
+				if((pos+rad*Vector3r::Ones()).cwiseMax(mx)!=mx || (pos-rad*Vector3r::Ones()).cwiseMin(mn)!=mn){ FOREACH(const Sph& s, C.pack) if((s.c+s.r*Vector3r::Ones()).cwiseMax(mx)!=mx || (s.c-s.r*Vector3r::Ones()).cwiseMin(mn)!=mn) goto overlap; }
 				// check overlaps with bounding spheres of other clumps
 				FOREACH(const ClumpInfo& cInfo, clumpInfos){
 					bool detailedCheck=false;

@@ -30,7 +30,7 @@ SphereMat=O.materials[id_SphereMat]
 #generate particles:
 sp=pack.SpherePack()
 sp.makeCloud(lowercorner,uppercorner,.0002,rRelFuzz=.3)
-O.bodies.append([utils.sphere(c,r,material=SphereMat) for c,r in sp])
+O.bodies.append([sphere(c,r,material=SphereMat) for c,r in sp])
 
 #generate boundary:
 O.bodies.append(geom.facetBox(uppercorner/2,uppercorner/2,wire=True,fixed=True,material=SphereMat))
@@ -45,7 +45,7 @@ if model_type == 1:#hertz model with capillary forces
 			[Ip2_FrictMat_FrictMat_MindlinCapillaryPhys(label='ContactModel')],#for hertz model only
 			[Law2_ScGeom_MindlinPhys_Mindlin()]#for hertz model only
 		),
-		Law2_ScGeom_CapillaryPhys_Capillarity(CapillaryPressure=10000),#for hertz model only
+		Law2_ScGeom_CapillaryPhys_Capillarity(capillaryPressure=10000),#for hertz model only
 		NewtonIntegrator(damping=local_damping,gravity=(0,0,-9.81)),
 	]
 	ContactModel.betan=viscous_normal
@@ -60,12 +60,12 @@ else:
 			[Ip2_FrictMat_FrictMat_CapillaryPhys()],	#for linear model only
 			[Law2_ScGeom_FrictPhys_CundallStrack()],	#for linear model only
 		),
-		Law2_ScGeom_CapillaryPhys_Capillarity(CapillaryPressure=10000),#for linear model only
+		Law2_ScGeom_CapillaryPhys_Capillarity(capillaryPressure=10000),#for linear model only
 		NewtonIntegrator(damping=local_damping,gravity=(0,0,-9.81)),
 	]
 
 #set time step and run simulation:
-O.dt=0.5*utils.PWaveTimeStep()
+O.dt=0.5*PWaveTimeStep()
 
 from yade import qt
 qt.View()

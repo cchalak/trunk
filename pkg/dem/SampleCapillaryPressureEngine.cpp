@@ -1,3 +1,5 @@
+#ifdef DEPREC_CODE
+
 /*************************************************************************
 *  Copyright (C) 2006 by Luc Scholtes                                    *
 *  luc.scholtes@hmg.inpg.fr                                              *
@@ -58,12 +60,12 @@ void SampleCapillaryPressureEngine::action()
 			if (scene->iter % 100 == 0) cerr << "pressure variation!!" << endl;
 		
 			if ((Pressure>=0) && (Pressure<=1000000000)) Pressure += PressureVariation;
-			capillaryCohesiveLaw->CapillaryPressure = Pressure;
+			capillaryCohesiveLaw->capillaryPressure = Pressure;
 
  			capillaryCohesiveLaw->fusionDetection = fusionDetection;
 			capillaryCohesiveLaw->binaryFusion = binaryFusion;
 		}		
-		else { capillaryCohesiveLaw->CapillaryPressure = Pressure;
+		else { capillaryCohesiveLaw->capillaryPressure = Pressure;
 		       capillaryCohesiveLaw->fusionDetection = fusionDetection;
 		       capillaryCohesiveLaw->binaryFusion = binaryFusion;}
 		if (scene->iter % 100 == 0) cerr << "capillary pressure = " << Pressure << endl;
@@ -72,3 +74,4 @@ void SampleCapillaryPressureEngine::action()
 		UnbalancedForce = ComputeUnbalancedForce(scene);
 }
 
+#endif //DEPREC CODE

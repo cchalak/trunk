@@ -13,6 +13,7 @@
 #include<yade/core/Interaction.hpp>
 #include<yade/core/Scene.hpp>
 #include<yade/core/Clump.hpp>
+#include<yade/pkg/dem/Shop.hpp>
 
 CREATE_LOGGER(GlobalStiffnessTimeStepper);
 YADE_PLUGIN((GlobalStiffnessTimeStepper));
@@ -57,12 +58,9 @@ void GlobalStiffnessTimeStepper::findTimeStepFromBody(const shared_ptr<Body>& bo
 	
 	Real Rdt =  std::min( std::min (dtx, dty), dtz );//Rdt = smallest squared eigenperiod for rotational motions
 	dt = 1.41044*timestepSafetyCoefficient*std::sqrt(std::min(dt,Rdt));//1.41044 = sqrt(2)
-	//if there is a target dt, then we apply density scaling on the body
+	//if there is a target dt, then we apply density scaling on the body, the inertia used in Newton will be mass*scaling, the weight is unmodified
 	if (densityScaling) {
-// 		Real prevSc = sdec->densityScaling;
-		sdec->densityScaling = min(1.001*sdec->densityScaling,timestepSafetyCoefficient*pow(dt /targetDt,2.0));
-// 		sdec->vel*=min(pow(sdec->densityScaling/prevSc,2),1.);
-// 		sdec->angVel*=min(pow(sdec->densityScaling/prevSc,2),1.);
+		sdec->densityScaling = min(sdec->densityScaling,timestepSafetyCoefficient*pow(dt /targetDt,2.0));
 		newDt=targetDt;
 	}
 	//else we update dt normaly

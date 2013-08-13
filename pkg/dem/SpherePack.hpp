@@ -5,10 +5,12 @@
 #include<vector>
 #include<string>	
 #include<limits>
+#include<iostream>
 using namespace std; // sorry
 
 #include<boost/python.hpp>
-#include<yade/extra/boost_python_len.hpp>
+#include<boost/python/object.hpp>
+#include<boost/version.hpp>
 using namespace boost;
 
 #include<boost/foreach.hpp>
@@ -79,7 +81,7 @@ public:
 
 	// generate packing of clumps, selected with equal probability
 	// periodic boundary is supported
-	long makeClumpCloud(const Vector3r& mn, const Vector3r& mx, const vector<shared_ptr<SpherePack> >& clumps, bool periodic=false, int num=-1);
+	long makeClumpCloud(const Vector3r& mn, const Vector3r& mx, const vector<shared_ptr<SpherePack> >& clumps, bool periodic=false, int num=-1, int seed=0);
 
 	// periodic repetition
 	void cellRepeat(Vector3i count);
@@ -90,7 +92,11 @@ public:
 	python::tuple aabb_py() const { Vector3r mn,mx; aabb(mn,mx); return python::make_tuple(mn,mx); }
 	void aabb(Vector3r& mn, Vector3r& mx) const {
 		Real inf=std::numeric_limits<Real>::infinity(); mn=Vector3r(inf,inf,inf); mx=Vector3r(-inf,-inf,-inf);
-		FOREACH(const Sph& s, pack){ Vector3r r(s.r,s.r,s.r); mn=mn.cwise().min(s.c-r); mx=mx.cwise().max(s.c+r);}
+		FOREACH(const Sph& s, pack){ 
+      Vector3r r(s.r,s.r,s.r); 
+      mn=mn.cwiseMin(s.c-r); 
+      mx=mx.cwiseMax(s.c+r);
+    }
 	}
 	Vector3r midPt() const {Vector3r mn,mx; aabb(mn,mx); return .5*(mn+mx);}
 	Real relDensity() const {
@@ -106,11 +112,17 @@ public:
 	// transformations
 	void translate(const Vector3r& shift){ FOREACH(Sph& s, pack) s.c+=shift; }
 	void rotate(const Vector3r& axis, Real angle){
-		if(cellSize!=Vector3r::Zero()) { LOG_WARN("Periodicity reset when rotating periodic packing (non-zero cellSize="<<cellSize<<")"); cellSize=Vector3r::Zero(); }
+		if(cellSize!=Vector3r::Zero()) { 
+      LOG_WARN("Periodicity reset when rotating periodic packing (non-zero cellSize="<<cellSize<<")"); 
+      cellSize=Vector3r::Zero(); 
+    }
 		Vector3r mid=midPt(); Quaternionr q(AngleAxisr(angle,axis)); FOREACH(Sph& s, pack) s.c=q*(s.c-mid)+mid;
 	}
 	void rotateAroundOrigin(const Quaternionr& rot){
-		if(cellSize!=Vector3r::Zero()){ LOG_WARN("Periodicity reset when rotating periodic packing (non-zero cellSize="<<cellSize<<")"); cellSize=Vector3r::Zero(); }
+		if(cellSize!=Vector3r::Zero()){ 
+      LOG_WARN("Periodicity reset when rotating periodic packing (non-zero cellSize="<<cellSize<<")"); 
+      cellSize=Vector3r::Zero(); 
+    }
 		FOREACH(Sph& s, pack) s.c=rot*s.c;
 	}
 	void scale(Real scale){ Vector3r mid=midPt(); cellSize*=scale; FOREACH(Sph& s, pack) {s.c=scale*(s.c-mid)+mid; s.r*=abs(scale); } }
@@ -121,7 +133,7 @@ public:
 
 	// iteration 
 	size_t len() const{ return pack.size(); }
-	python::tuple getitem(size_t idx){ if(idx<0 || idx>=pack.size()) throw runtime_error("Index "+lexical_cast<string>(idx)+" out of range 0.."+lexical_cast<string>(pack.size()-1)); return pack[idx].asTuple(); }
+	python::tuple getitem(size_t idx){ if(idx>=pack.size()) throw runtime_error("Index "+lexical_cast<string>(idx)+" out of range 0.."+lexical_cast<string>(pack.size()-1)); return pack[idx].asTuple(); }
 	struct _iterator{
 		const SpherePack& sPack; size_t pos;
 		_iterator(const SpherePack& _sPack): sPack(_sPack), pos(0){}

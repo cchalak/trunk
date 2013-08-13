@@ -47,7 +47,7 @@ class Shop{
 		static shared_ptr<FrictMat> defaultGranularMat();
 
 		//! Return vector of pairs (center,radius) loaded from a file with numbers inside
-		static vector<pair<Vector3r,Real> > loadSpheresFromFile(const string& fname,Vector3r& minXYZ, Vector3r& maxXYZ, Vector3r* cellSize=NULL);
+		static vector<tuple<Vector3r,Real,int> > loadSpheresFromFile(const string& fname,Vector3r& minXYZ, Vector3r& maxXYZ, Vector3r* cellSize=NULL);
 		
 		//! Save spheres in the current simulation into a text file
 		static void saveSpheresToFile(string fileName);
@@ -121,6 +121,7 @@ class Shop{
 		
 		//! Function to compute overall ("macroscopic") stress.
 		static Matrix3r getStress(Real volume=0);
+		static Matrix3r getCapillaryStress(Real volume=0);
 		static Matrix3r stressTensorOfPeriodicCell() { LOG_WARN("Shop::stressTensorOfPeriodicCelli is DEPRECATED: use getStress instead"); return Shop::getStress(); }
 		//! This version is restricted to periodic BCs and Dem3Dof
 		static Matrix3r stressTensorOfPeriodicCell(bool smallStrains=true);
