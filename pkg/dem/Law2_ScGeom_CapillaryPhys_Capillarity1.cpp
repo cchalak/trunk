@@ -15,7 +15,6 @@
 #include <yade/pkg/common/ElastMat.hpp>
 #include <yade/pkg/dem/ScGeom.hpp>
 
-#include <yade/pkg/dem/CapillaryPhys1.hpp>
 #include <yade/pkg/dem/Ip2_FrictMat_FrictMat_MindlinCapillaryPhys.hpp>
 #include <yade/core/Omega.hpp>
 #include <yade/core/Scene.hpp>
@@ -25,72 +24,12 @@
 
 #include <iostream>
 #include <fstream>
-class MeniscusPhysicalData {
-    public:
-    double R;
-        double volume;
-        double distance;
-        double surface;
-        double energy;
-        double force;
-        double succion;
-        double delta1;
-        double delta2;
-    	//default ctor
-        MeniscusPhysicalData() : R(0), volume(0), distance(0), surface(0), energy(0), force(0), succion(0), delta1(0), delta2(0) {}
-        //ctor with input values
-        MeniscusPhysicalData(const double& r, const double& v, const double& d, const double& s, const double& e, const double& f, const double& p, const double& a1, const double& a2) : R(r), volume(v), distance(d), surface(s), energy(e), force(f), succion(p), delta1(a1), delta2(a2) {}
-
-        //a minimal list of operators for the interpolation
-        //these operators are requirements for the DataType template parameter of interpolate()
-        MeniscusPhysicalData& operator+= (const MeniscusPhysicalData& m2)
-    {
-        R+=m2.R; volume+=m2.volume;  distance+=m2.distance;  surface+=m2.surface;  energy+=m2.energy;
-        force+=m2.force;  succion+=m2.succion;  delta1+=m2.delta1;    delta2+=m2.delta2;
-        return *this;
-    }
-
-        MeniscusPhysicalData operator* (const double& fact) const
-    {
-        return MeniscusPhysicalData(fact*R,
-                        fact*volume,
-                        fact*distance,
-                        fact*surface,
-                        fact*energy,
-                        fact*force,
-                        fact*succion,
-                        fact*delta1,
-                        fact*delta2);
-    }
-
-    const MeniscusPhysicalData& operator= (const MeniscusPhysicalData& m1)
-    {
-        R=m1.R; volume=m1.volume; distance=m1.distance; surface=m1.surface;
-        energy=m1.energy; force=m1.force; succion=m1.succion; delta1=m1.delta1;
-        delta2=m1.delta2;
-    }
-
-};
-
-//The structure for the meniscus: physical properties + cached values for fast interpolation
-class Meniscus {
-    public:
-    typedef MeniscusPhysicalData Data;
-        Data data;    //the variables of Laplace's problem
-        DT::Cell_handle cell;        //pointer to the last location in the triangulation, for faster locate()
-        std::vector<K::Vector_3> normals;// 4 normals relative to the current cell
-
-        Meniscus() : data(), cell(DT::Cell_handle()), normals(std::vector<K::Vector_3>()) {}
-};
-
 
 void Law2_ScGeom_CapillaryPhys_Capillarity1::postLoad(Law2_ScGeom_CapillaryPhys_Capillarity1&){
   
- std::vector<MeniscusPhysicalData> solutions;
-
-  /// We get data from a file and input them in triangulations
+ /// We get data from a file and input them in triangulations
   
-  ifstream file ("inputSolutions.dat");
+  ifstream file (inputFilename.c_str());
   // convention R,v,d,s,e,f,p,a1,a2,dummy (just for the example, define your own,
   // dummy is because has too much values per line - with one useless extra colum,)
   MeniscusPhysicalData dat;
@@ -225,7 +164,6 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 	InteractionContainer::iterator iiEnd = scene->interactions->end();
 	bool hertzInitialized = false;
 	for (; ii!=iiEnd ; ++ii) {
-
 		/// interaction is real
 		if ((*ii)->isReal()) {
 			const shared_ptr<Interaction>& interaction = *ii;
@@ -267,10 +205,10 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 			R2=alpha*std::max(currentContactGeometry->radius2,currentContactGeometry->radius1) ;
 
 			/// intergranular distance
-			Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2))*1e-3; // scGeom->penetrationDepth could probably be used here?
+			Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2)); // scGeom->penetrationDepth could probably be used here?
 
 			if ((currentContactGeometry->penetrationDepth>=0)|| D<=0 || createDistantMeniscii) { //||(scene->iter < 1) ) // a simplified way to define meniscii everywhere
-				D=0; // defines Fcap when spheres interpenetrate. D<0 leads to wrong interpolation has D<0 has no solution in the interpolation : this is not physically interpretable!! even if, interpenetration << grain radius.
+				D=0; // defines fCap when spheres interpenetrate. D<0 leads to wrong interpolation has D<0 has no solution in the interpolation : this is not physically interpretable!! even if, interpenetration << grain radius.
 				if (!hertzOn) {
 					if (fusionDetection && !cundallContactPhysics->meniscus) bodiesMenisciiList.insert((*ii));
 					cundallContactPhysics->meniscus=true;
@@ -283,10 +221,11 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 
 			/// Suction (Capillary pressure):
 			Real Pinterpol = 0;
-			if (!hertzOn) Pinterpol = cundallContactPhysics->isBroken ? 0 : CapillaryPressure;//*(R2/liquidTension);
-			else Pinterpol = mindlinContactPhysics->isBroken ? 0 : CapillaryPressure;//*(R2/liquidTension);
-			if (!hertzOn) cundallContactPhysics->CapillaryPressure = CapillaryPressure;
-			else mindlinContactPhysics->CapillaryPressure = CapillaryPressure;
+			//FIXME: why removing normalization?! (Bruno)
+			if (!hertzOn) Pinterpol = cundallContactPhysics->isBroken ? 0 : capillaryPressure;//*(R2/liquidTension);
+			else Pinterpol = mindlinContactPhysics->isBroken ? 0 : capillaryPressure;//*(R2/liquidTension);
+			if (!hertzOn) cundallContactPhysics->capillaryPressure = capillaryPressure;
+			else mindlinContactPhysics->capillaryPressure = capillaryPressure;
 
 			/// Capillary solution finder:
 			if ((Pinterpol>=0) && (hertzOn? mindlinContactPhysics->meniscus : cundallContactPhysics->meniscus)) {
@@ -294,23 +233,25 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 				//If P=0, we use null solution
 				//MeniscusParameters
 // 				solution(Pinterpol? capillary->Interpolate(R1,R2,Dinterpol, Pinterpol, currentIndexes) : MeniscusParameters());
- 				MeniscusPhysicalData solution = interpolate(dtVbased,K::Point_3(m.data.R, m.data.volume, m.data.distance), m, solutions);
+				//FIXME: is it R1/R2 (less than 1) or R2/R1 (>1)?
+ 				MeniscusPhysicalData solution = interpolate(dtPbased,K::Point_3(R1/R2, Pinterpol, D), cundallContactPhysics->m, solutions);
 
 				/// capillary adhesion force
 				Real Finterpol = solution.force;
-				Vector3r Fcap = Finterpol*currentContactGeometry->normal;
-				if (!hertzOn) cundallContactPhysics->Fcap = Fcap;
-				else mindlinContactPhysics->Fcap = Fcap;
+				Vector3r fCap = Finterpol*currentContactGeometry->normal;
+				if (!hertzOn) cundallContactPhysics->fCap = fCap;
+				else mindlinContactPhysics->fCap = fCap;
 				/// meniscus volume
+				//FIXME: hardcoding numerical constants is bad practice generaly, and it probably reveals a flaw in that case (Bruno)
 				Real Vinterpol = solution.volume*1e-9;
 				Real SInterface = solution.surface*1e-6;
 				if (!hertzOn) {
-					cundallContactPhysics->Vmeniscus = Vinterpol;
+					cundallContactPhysics->vMeniscus = Vinterpol;
 					cundallContactPhysics->SInterface = SInterface;
 					if (Vinterpol != 0) cundallContactPhysics->meniscus = true;
 					else cundallContactPhysics->meniscus = false;
 				} else {
-					mindlinContactPhysics->Vmeniscus = Vinterpol;
+					mindlinContactPhysics->vMeniscus = Vinterpol;
 					if (Vinterpol != 0) mindlinContactPhysics->meniscus = true;
 					else mindlinContactPhysics->meniscus = false;
 				}
@@ -361,15 +302,15 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 					short int& fusionNumber = hertzOn?mindlinContactPhysics->fusionNumber:cundallContactPhysics->fusionNumber;
 					if (binaryFusion) {
 						if (fusionNumber!=0) {	//cerr << "fusion" << endl;
-							hertzOn?mindlinContactPhysics->Fcap:cundallContactPhysics->Fcap = Vector3r::Zero();
+							hertzOn?mindlinContactPhysics->fCap:cundallContactPhysics->fCap = Vector3r::Zero();
 							continue;
 						}
 					}
 					//LINEAR VERSION : capillary force is divided by (fusionNumber + 1) - NOTE : any decreasing function of fusionNumber can be considered in fact
-					else if (fusionNumber !=0) hertzOn?mindlinContactPhysics->Fcap:cundallContactPhysics->Fcap /= (fusionNumber+1.);
+					else if (fusionNumber !=0) hertzOn?mindlinContactPhysics->fCap:cundallContactPhysics->fCap /= (fusionNumber+1.);
 				}
-				scene->forces.addForce((*ii)->getId1(), hertzOn?mindlinContactPhysics->Fcap:cundallContactPhysics->Fcap);
-				scene->forces.addForce((*ii)->getId2(),-(hertzOn?mindlinContactPhysics->Fcap:cundallContactPhysics->Fcap));
+				scene->forces.addForce((*ii)->getId1(), hertzOn?mindlinContactPhysics->fCap:cundallContactPhysics->fCap);
+				scene->forces.addForce((*ii)->getId2(),-(hertzOn?mindlinContactPhysics->fCap:cundallContactPhysics->fCap));
 			}
 		}
 	}

@@ -1,7 +1,7 @@
 // Compile with:
 // g++ -o test naturalNeighbour.cpp -O3 -DNDEBUG -frounding-math -lgmp -lCGAL -lboost_thread
 // required libraries: CGAL, boost-thread, gmp
-
+#pragma once
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Cartesian.h>
@@ -25,8 +25,7 @@ main: example usage
 
 namespace CGAL {
 
-//helpful array for permutations
-int comb [6] = {1, 2, 3, 0, 1, 2};
+
 
 //Vertex base including an index for each vertex, adapted from CGAL::Triangulation_vertex_base_with_id_2
 template < typename GT,  typename Vb = Triangulation_vertex_base_3<GT> >
@@ -65,6 +64,8 @@ getIncidentVtxWeights(const Dt& dt,
             std::vector<typename Dt::Geom_traits::Vector_3>& normals,
             typename Dt::Cell_handle& start = CGAL_TYPENAME_DEFAULT_ARG Dt::Cell_handle())
 {
+  //helpful array for permutations
+  const int comb [6] = {1, 2, 3, 0, 1, 2};
   typedef typename Dt::Geom_traits Gt;
   typedef typename Gt::Point_3 Point;
   typedef typename Dt::Cell_handle Cell_handle;
