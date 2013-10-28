@@ -9,7 +9,6 @@
 //Modifs : Parameters renamed as MeniscusParameters
 //id1/id2 as id1 is the smallest grain, FIXME : wetting angle?
 //FIXME : in triaxialStressController, change test about null force in updateStiffnessccc
-//FIXME : needs "requestErase" somewhere
 
 #include "Law2_ScGeom_CapillaryPhys_Capillarity1.hpp"
 #include <yade/pkg/common/ElastMat.hpp>
@@ -19,9 +18,6 @@
 #include <yade/core/Omega.hpp>
 #include <yade/core/Scene.hpp>
 #include <yade/lib/base/Math.hpp>
-// #include <yade/pkg/dem/CapillaryPhys1.hpp>
-
-//#include "DelaunayInterpolation.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -142,7 +138,6 @@ using namespace std;
 // capillary->fill("M(r=5)");
 // capillary->fill("M(r=10)");
 // }
-
 
 // MeniscusParameters::MeniscusParameters()
 // {
