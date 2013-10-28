@@ -26,6 +26,9 @@
 #include <iostream>
 #include <fstream>
 
+DT Law2_ScGeom_CapillaryPhys_Capillarity1::dtVbased;
+DT Law2_ScGeom_CapillaryPhys_Capillarity1::dtPbased;
+
      Real Law2_ScGeom_CapillaryPhys_Capillarity1::intEnergy()
 {
 	Real energy=0;
@@ -34,26 +37,32 @@
 		CapillaryPhys1* phys = dynamic_cast<CapillaryPhys1*>(I->phys.get());
  		if(phys) {
 		  Real liquidTension=0.073; //why to declare it twice? any other way to do it?
+		  //BC: declare it like capillaryPressure in hpp, and make it 0.073 by default. Then it can be modified by the user.
 			energy += liquidTension*phys->SInterface;}
 // 			energy += 0.5*(phys->normalForce.squaredNorm()/phys->kn + phys->shearForce.squaredNorm()/phys->ks);}
  	}
 	return energy;
 } 
 
-void Law2_ScGeom_CapillaryPhys_Capillarity1::postLoad(Law2_ScGeom_CapillaryPhys_Capillarity1&) {
+void Law2_ScGeom_CapillaryPhys_Capillarity1::triangulateData() {
     //test if R1>R2, Sinon changer
 //   if (R1<R2)
 //   {
-//     v=R1;
+//     v=R1;0
 //     R1=R2;
-//     R2=v;
+//     R2=v;C
 //   }
 
-
+	if (solutions.size()>0) {
+		LOG_WARN("Law2_ScGeom_CapillaryPhys_Capillarity1 asking triangulation for the second time. Ignored.");
+		return;}
 /// We get data from a file and input them in triangulations
-//     inputFilename << "capillaryfile.txt";
-//     ifstream file (inputFilename.c_str());
-       ifstream file ("capillaryfile.txt");
+
+    ifstream file (inputFilename.c_str());
+    if (!file.is_open()) {
+		LOG_ERROR("No data file found for capillary law. Check path and inputFilename.");
+		return;}
+//        ifstream file ("capillaryfile.txt");
        
     // convention R,v,d,s,e,f,p,a1,a2,dummy (just for the example, define your own,
     // dummy is because has too much values per line - with one useless extra colum,)
@@ -65,7 +74,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::postLoad(Law2_ScGeom_CapillaryPhys_
 
         solutions.push_back(dat);
 //         cout <<dat.R<<" "<<dat.volume<<" "<<dat.distance<<" "<<dat.surface<<" "<<dat.energy<<" "<<dat.force<<" "<<dat.succion<<" "<<dat.delta1<<" "<<dat.delta2<<endl;
-        cout <<dat.succion<<" "<<dat.force<<" "<<dat.distance<<" "<<dat.volume<<" "<<dat.surface<<" "<<dat.arclength<<" "<<dat.delta1<<" "<<dat.delta2<<" "<<dat.R<<endl;
+//         cout <<dat.succion<<" "<<dat.force<<" "<<dat.distance<<" "<<dat.volume<<" "<<dat.surface<<" "<<dat.arcLength<<" "<<dat.delta1<<" "<<dat.delta2<<" "<<dat.R<<endl;
 
     }
     file.close();
@@ -185,7 +194,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 {
     if (!scene) cerr << "scene not defined!";
     shared_ptr<BodyContainer>& bodies = scene->bodies;
-    if (dtVbased.number_of_vertices ()<1 ) postLoad(*this);
+    if (dtPbased.number_of_vertices ()<1 ) triangulateData();
     if (fusionDetection && !bodiesMenisciiList.initialized) bodiesMenisciiList.prepare(scene);
 
     InteractionContainer::iterator ii = scene->interactions->begin();
