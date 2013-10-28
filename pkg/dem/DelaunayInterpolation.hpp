@@ -1,9 +1,14 @@
-// Compile with:
-// g++ -o test naturalNeighbour.cpp -O3 -DNDEBUG -frounding-math -lgmp -lCGAL -lboost_thread
-// required libraries: CGAL, boost-thread, gmp
+/*************************************************************************
+*  Copyright (C) 2013 by Bruno Chareyre    <bruno.chareyre@hmg.inpg.fr>  *
+*                                                                        *
+*  This program is free software; it is licensed under the terms of the  *
+*  GNU General Public License v2 or later. See file LICENSE for details. *
+*************************************************************************/
+
 #pragma once
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Cartesian.h>
 #include <iostream>
 #include <fstream>
@@ -11,7 +16,7 @@
 /*
 TYPES:
 Triangulation_vertex_base_with_id_3: we redefine a vertex base including an index for each vertex (available in CGAL in 2D but not in 3D),
-MeniscusPhysicalData: the physical variables describing a capillary bridge, with a few algebraic operators
+MeniscusPhysicalData: the physical variables describing a capillary bridge, with a few algebraic operators for computing weighted averages
 Meniscus: a structure combining MeniscusPhysicalData with some cached data allowing faster operations in multiple queries (pointer to the last cell found and its normals)
 
 FUNCTIONS:
@@ -28,7 +33,7 @@ namespace CGAL {
 
 
 //Vertex base including an index for each vertex, adapted from CGAL::Triangulation_vertex_base_with_id_2
-template < typename GT,  typename Vb = Triangulation_vertex_base_3<GT> >
+template < typename GT,  typename Vb = Triangulation_vertex_base_with_info_3<unsigned,GT> >
 class Triangulation_vertex_base_with_id_3 : public Vb
 {
   int _id;
@@ -45,8 +50,8 @@ public:
   Triangulation_vertex_base_with_id_3(const Point & p): Vb(p) {}
   Triangulation_vertex_base_with_id_3(const Point & p, Cell_handle c): Vb(p, c) {}
   Triangulation_vertex_base_with_id_3(Cell_handle c): Vb(c) {}
-  int id() const { return _id; }
-  int& id()       { return _id; }
+  unsigned int id() const { return this->info(); }
+  unsigned int& id()       { return this->info(); }
 };
 
 // The function returning vertices and their weights for an arbitrary point in R3 space.
@@ -104,8 +109,8 @@ getIncidentVtxWeights(const Dt& dt,
 
 } //END NAMESPACE CGAL
 
-// typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Simple_cartesian<double>				K;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+// typedef CGAL::Simple_cartesian<double>				K;
 typedef CGAL::Delaunay_triangulation_3<K>::Geom_traits		Traits;
 typedef CGAL::Triangulation_vertex_base_with_id_3<Traits>	Vb;
 typedef CGAL::Triangulation_cell_base_3<Traits>			Cb;
@@ -123,7 +128,7 @@ typename DataOwner::Data interpolate (const Dt& dt, const typename Dt::Geom_trai
     typename DataOwner::Data data = typename DataOwner::Data();//initialize null solution
     if (!result.third) return data;// out of the convex hull, we return the null solution
     //else, we compute the weighted sum
-    for (int k=0; k<coords.size(); k++) data += (rawData[coords[k].first->id()]*coords[k].second);
+    for (unsigned int k=0; k<coords.size(); k++) data += (rawData[coords[k].first->id()]*coords[k].second);
     return data*(1./result.second);
 }
 
