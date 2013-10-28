@@ -44,59 +44,32 @@ DT Law2_ScGeom_CapillaryPhys_Capillarity1::dtPbased;
 	return energy;
 } 
 
+
 void Law2_ScGeom_CapillaryPhys_Capillarity1::triangulateData() {
-    //test if R1>R2, Sinon changer
-//   if (R1<R2)
-//   {
-//     v=R1;0
-//     R1=R2;
-//     R2=v;C
-//   }
-
-	if (solutions.size()>0) {
-		LOG_WARN("Law2_ScGeom_CapillaryPhys_Capillarity1 asking triangulation for the second time. Ignored.");
-		return;}
-/// We get data from a file and input them in triangulations
-
+    /// We get data from a file and input them in triangulations
+    if (solutions.size()>0) {LOG_WARN("Law2_ScGeom_CapillaryPhys_Capillarity1 asking triangulation for the second time. Ignored."); return;}
     ifstream file (inputFilename.c_str());
-    if (!file.is_open()) {
-		LOG_ERROR("No data file found for capillary law. Check path and inputFilename.");
-		return;}
-//        ifstream file ("capillaryfile.txt");
-       
+    if (!file.is_open()) { LOG_ERROR("No data file found for capillary law. Check path and inputFilename."); return;}
+
     // convention R,v,d,s,e,f,p,a1,a2,dummy (just for the example, define your own,
     // dummy is because has too much values per line - with one useless extra colum,)
     MeniscusPhysicalData dat;
     double dummy;
     while ( file.good() ) {
-//         file >>dat.R>>dat.volume>>dat.distance>>dat.surface>>dat.energy>>dat.force>>dat.succion>>dat.delta1>>dat.delta2>>dummy;
-        file >>dat.succion>>dat.force>>dat.distance>>dat.volume>>dat.surface>>dat.arclength>>dat.delta1>>dat.delta2>>dat.R>>dummy;
-
+        file >>dat.succion>>dat.force>>dat.distance>>dat.volume>>dat.surface>>dat.arcLength>>dat.delta1>>dat.delta2>>dat.R>>dummy;
         solutions.push_back(dat);
-//         cout <<dat.R<<" "<<dat.volume<<" "<<dat.distance<<" "<<dat.surface<<" "<<dat.energy<<" "<<dat.force<<" "<<dat.succion<<" "<<dat.delta1<<" "<<dat.delta2<<endl;
-//         cout <<dat.succion<<" "<<dat.force<<" "<<dat.distance<<" "<<dat.volume<<" "<<dat.surface<<" "<<dat.arcLength<<" "<<dat.delta1<<" "<<dat.delta2<<" "<<dat.R<<endl;
-
     }
     file.close();
-
-    //We build two triangulations, one for imposed succion, the other for imposed volume
+    // Make lists of points with index, so we can use range insertion, more efficient
+    // see http://doc.cgal.org/latest/Triangulation_3/index.html#Triangulation_3SettingInformationWhileInserting
+    std::vector< std::pair<K::Point_3,unsigned> > pointsP, pointsV;
     for (unsigned int k=0; k<solutions.size(); k++) {
-        DT::Vertex_handle vh = dtVbased.insert(K::Point_3(solutions[k].R, solutions[k].volume, solutions[k].distance));
-        vh->id()=k;
-        vh = dtPbased.insert(K::Point_3(solutions[k].R, solutions[k].succion, solutions[k].distance));
-        vh->id()=k;
+        pointsP.push_back(std::make_pair(K::Point_3(solutions[k].R, solutions[k].succion, solutions[k].distance),k));
+        pointsV.push_back(std::make_pair(K::Point_3(solutions[k].R, solutions[k].volume, solutions[k].distance),k));
     }
-// capillary = shared_ptr<capillarylaw>(new capillarylaw);
-// capillary->fill("M(r=1)");
-// capillary->fill("M(r=1.1)");
-// capillary->fill("M(r=1.25)");
-// capillary->fill("M(r=1.5)");
-// capillary->fill("M(r=1.75)");
-// capillary->fill("M(r=2)");
-// capillary->fill("M(r=3)");
-// capillary->fill("M(r=4)");
-// capillary->fill("M(r=5)");
-// capillary->fill("M(r=10)");
+    // and now range insertion
+    dtPbased.insert(pointsP.begin(), pointsP.end());
+    dtVbased.insert(pointsV.begin(), pointsV.end());
 }
 
 // int main()
