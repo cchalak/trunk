@@ -107,7 +107,7 @@ public :
 
     void action();
      Real intEnergy();
-
+     Real waterVolume();
 //     {return 0;}
 //     void postLoad(Law2_ScGeom_CapillaryPhys_Capillarity1&);
     void triangulateData();
@@ -123,6 +123,7 @@ public :
                    ((bool,createDistantMeniscii,false,,"Generate meniscii between distant spheres? Else only maintain the existing one. For modeling a wetting path this flag should always be false. For a drying path it should be true for one step (initialization) then false, as in the logic of [Scholtes2009c]_"))
 	          ,,
 		  .def("intEnergy",&Law2_ScGeom_CapillaryPhys_Capillarity1::intEnergy,"define the energy of interfaces in unsaturated pendular state")
+		  .def("waterVolume",&Law2_ScGeom_CapillaryPhys_Capillarity1::waterVolume,"return the total value of water in the sample")
 		   
      );
 };

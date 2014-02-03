@@ -10,8 +10,9 @@
 //id1/id2 as id1 is the smallest grain, FIXME : wetting angle?
 //FIXME : in triaxialStressController, change test about null force in updateStiffnessccc
 
-#include "Law2_ScGeom_CapillaryPhys_Capillarity1.hpp"
+#include <yade/pkg/dem/Law2_ScGeom_CapillaryPhys_Capillarity1.hpp>
 #include <yade/pkg/common/ElastMat.hpp>
+
 #include <yade/pkg/dem/ScGeom.hpp>
 #include <yade/pkg/dem/Ip2_FrictMat_FrictMat_CapillaryPhys1.hpp>
 #include <yade/pkg/dem/Ip2_FrictMat_FrictMat_MindlinCapillaryPhys.hpp>
@@ -40,6 +41,17 @@ DT Law2_ScGeom_CapillaryPhys_Capillarity1::dtPbased;
 	return energy;
 } 
 
+     Real Law2_ScGeom_CapillaryPhys_Capillarity1::waterVolume()
+{
+	Real volume=0;
+	FOREACH(const shared_ptr<Interaction>& I, *scene->interactions){
+		if(!I->isReal()) continue;
+		CapillaryPhys1* phys = dynamic_cast<CapillaryPhys1*>(I->phys.get());
+ 		if(phys) {
+		  volume += phys->vMeniscus;}
+ 	}
+	return volume;
+} 
 
 void Law2_ScGeom_CapillaryPhys_Capillarity1::triangulateData() {
     /// We get data from a file and input them in triangulations
@@ -68,7 +80,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::triangulateData() {
     dtVbased.insert(pointsV.begin(), pointsV.end());
 }
 
-// int main()
+  // int main()
 // {
 // // DT dtPbased;//here the coordinates are R,distance,P
 // // DT dtVbased;//here they are R,distance,volume
@@ -204,14 +216,14 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 /// Interacting Grains:
 // If you want to define a ratio between YADE sphere size and real sphere size
             Real alpha=1;
-            Real R1 = alpha*std::min(currentContactGeometry->radius2,currentContactGeometry->radius1) ;           
-            Real R2 =alpha*std::max(currentContactGeometry->radius2,currentContactGeometry->radius1) ;
+            Real R1 = alpha*std::max(currentContactGeometry->radius2,currentContactGeometry->radius1) ;           
+            Real R2 =alpha*std::min(currentContactGeometry->radius2,currentContactGeometry->radius1) ;
 
 /// intergranular distance
             Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2)); // scGeom->penetrationDepth could probably be used here?
 
             if ((currentContactGeometry->penetrationDepth>=0)|| D<=0 || createDistantMeniscii) { //||(scene->iter < 1) ) // a simplified way to define meniscii everywhere
-                D=0; // defines fCap when spheres interpenetrate. D<0 leads to wrong interpolation has D<0 has no solution in the interpolation : this is not physically interpretable!! even if, interpenetration << grain radius.
+//                 D=0; // defines fCap when spheres interpenetrate. D<0 leads to wrong interpolation has D<0 has no solution in the interpolation : this is not physically interpretable!! even if, interpenetration << grain radius.
                 if (!hertzOn) {
                     if (fusionDetection && !cundallContactPhysics->meniscus) bodiesMenisciiList.insert((*ii));
                     cundallContactPhysics->meniscus=true;
