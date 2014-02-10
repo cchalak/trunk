@@ -212,15 +212,20 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 
 /// Capillary components definition:
             Real liquidTension = 0.073; // superficial water tension at 20 Celsius degrees in N/m
-
+           
+/// the parameter that takes into account the rugosity of the particles. 
+            Real epsilon = 0;
 /// Interacting Grains:
 // If you want to define a ratio between YADE sphere size and real sphere size
             Real alpha=1;
-            Real R1 = alpha*std::max(currentContactGeometry->radius2,currentContactGeometry->radius1) ;           
-            Real R2 =alpha*std::min(currentContactGeometry->radius2,currentContactGeometry->radius1) ;
+            Real R1 = alpha*std::max(currentContactGeometry->radius2,currentContactGeometry->radius1);
+            Real R2 =alpha*std::min(currentContactGeometry->radius2,currentContactGeometry->radius1);
+            Real factor = std::max(R2/R1,1-R2/R1);
+            R1 = R1-epsilon*factor;           
+            R2 =R2-epsilon*(1-factor);
 
 /// intergranular distance
-            Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2)); // scGeom->penetrationDepth could probably be used here?
+            Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2))+epsilon; // scGeom->penetrationDepth could probably be used here?
 
             if ((currentContactGeometry->penetrationDepth>=0)|| D<=0 || createDistantMeniscii) { //||(scene->iter < 1) ) // a simplified way to define meniscii everywhere
 //                 D=0; // defines fCap when spheres interpenetrate. D<0 leads to wrong interpolation has D<0 has no solution in the interpolation : this is not physically interpretable!! even if, interpenetration << grain radius.
@@ -249,8 +254,8 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 //MeniscusParameters
 // solution(Pinterpol? capillary->Interpolate(R1,R2,Dinterpol, Pinterpol, currentIndexes) : MeniscusParameters());
 //FIXME: is it R1/R2 (less than 1) or R2/R1 (>1)?
-                MeniscusPhysicalData solution = interpolate(dtPbased,K::Point_3(R2/R1, Pinterpol, Dinterpol), cundallContactPhysics->m, solutions);
-
+                MeniscusPhysicalData solution = interpolate1(dtPbased,K::Point_3(R2/R1, Pinterpol, Dinterpol), cundallContactPhysics->m, solutions);
+//                 MeniscusPhysicalData solution = interpolate2(dtVbased,K::Point_3(R2/R1, Vinterpol, Dinterpol), cundallContactPhysics->m, solutions);
 /// capillary adhesion force
                 Real Finterpol = solution.force;
                 Vector3r fCap = Finterpol*R1*liquidTension*currentContactGeometry->normal;
