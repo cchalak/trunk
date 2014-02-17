@@ -44,23 +44,7 @@ Rk: - the formulation is valid only for pendular menisci involving two grains (p
 
 /// !!! This version is deprecated. It should be updated to the new formalism -> ToDo !!!
 
-/// a class to store meniscus parameters -> Rk: is it really needed since CapillaryPhys exist?
-// class MeniscusParameters1
-// {
-// public :
-// Real V;
-// Real F;
-// Real S;
-// Real L;
-// Real delta1;
-// Real delta2;
-// int index1;
-// int index2;
-//
-// MeniscusParameters1();
-// MeniscusParameters1(const MeniscusParameters1 &source);
-// ~MeniscusParameters1();
-// };
+
 
 /// R = ratio(RadiusParticle1 on RadiusParticle2). Here, 10 R values from interpolation files (yade/extra/capillaryFiles), R = 1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9
 //const int NB_R_VALUES = 10;
@@ -108,6 +92,8 @@ public :
     void action();
      Real intEnergy();
      Real waterVolume();
+     void GetVolumeforGivenSuction(Real suction);
+
 //     {return 0;}
 //     void postLoad(Law2_ScGeom_CapillaryPhys_Capillarity1&);
     void triangulateData();
@@ -115,54 +101,21 @@ public :
     YADE_CLASS_BASE_DOC_ATTRS_CTOR_PY(Law2_ScGeom_CapillaryPhys_Capillarity1,GlobalEngine,"This law allows one to take into account capillary forces/effects between spheres coming from the presence of interparticular liquid bridges (menisci).\n\nThe control parameter is the capillary pressure (or suction) Uc = ugas - Uliquid. Liquid bridges properties (volume V, extent over interacting grains delta1 and delta2) are computed as a result of the defined capillary pressure and of the interacting geometry (spheres radii and interparticular distance).\n\nReferences: in english [Scholtes2009b]_; more detailed, but in french [Scholtes2009d]_.\n\nThe law needs ascii files M(r=i) with i=R1/R2 to work (see https://yade-dem.org/index.php/CapillaryTriaxialTest). These ASCII files contain a set of results from the resolution of the Laplace-Young equation for different configurations of the interacting geometry."
     "\n\nIn order to allow capillary forces between distant spheres, it is necessary to enlarge the bounding boxes using :yref:`Bo1_Sphere_Aabb::aabbEnlargeFactor` and make the Ig2 define define distant interactions via:yref:`interactionDetectionFactor<Ig2_Sphere_Sphere_ScGeom::interactionDetectionFactor>`. It is also necessary to disable interactions removal by the constitutive law (:yref:`Law2<Law2_ScGeom_FrictPhys_CundallStrack::neverErase>=True`). The only combinations of laws supported are currently capillary law + :yref:`Law2_ScGeom_FrictPhys_CundallStrack` and capillary law + :yref:`Law2_ScGeom_MindlinPhys_Mindlin` (and the other variants of Hertz-Mindlin).\n\nSee CapillaryPhys-example.py for an example script.",
                    ((Real,capillaryPressure,0.,,"Value of the capillary pressure Uc defines as Uc=Ugas-Uliquid"))
+		  ((Real,VolumeofWater,-1.,,"Value of imposed water volume"))
                    ((bool,fusionDetection,false,,"If true potential menisci overlaps are checked"))
                    ((bool,initialized,false,," "))
                    ((bool,binaryFusion,true,,"If true, capillary forces are set to zero as soon as, at least, 1 overlap (menisci fusion) is detected"))
                    ((bool,hertzOn,false,,"|yupdate| true if hertz model is used"))
                    ((string,inputFilename,string("capillaryfile.txt"),,"the file with meniscus solutions, used for interpolation."))
                    ((bool,createDistantMeniscii,false,,"Generate meniscii between distant spheres? Else only maintain the existing one. For modeling a wetting path this flag should always be false. For a drying path it should be true for one step (initialization) then false, as in the logic of [Scholtes2009c]_"))
-	          ,,
+                   ((bool,IsPressureImposed,true,," If True, suction is imposed and is constant if not Volume is imposed-Undrained test"))   
+		   ,,
 		  .def("intEnergy",&Law2_ScGeom_CapillaryPhys_Capillarity1::intEnergy,"define the energy of interfaces in unsaturated pendular state")
 		  .def("waterVolume",&Law2_ScGeom_CapillaryPhys_Capillarity1::waterVolume,"return the total value of water in the sample")
-		   
      );
 };
 
-// class TableauD
-// {
-// public:
-// Real D;
-// std::vector<std::vector<Real> > data;
-// MeniscusParameters Interpolate3(Real P, int& index);
-// TableauD();
-// TableauD(std::ifstream& file);
-// ~TableauD();
-// };
-//
-// // Fonction d'ecriture de tableau, utilisee dans le constructeur pour test
-// class Tableau;
-// std::ostream& operator<<(std::ostream& os, Tableau& T);
-//
-// class Tableau
-// {
-// public:
-// Real R;
-// std::vector<TableauD> full_data;
-// MeniscusParameters Interpolate2(Real D, Real P, int& index1, int& index2);
-// std::ifstream& operator<< (std::ifstream& file);
-// Tableau();
-// Tableau(const char* filename);
-// ~Tableau();
-// };
-//
-// class capillarylaw
-// {
-// public:
-// capillarylaw();
-// std::vector<Tableau> data_complete;
-// MeniscusParameters Interpolate(Real R1, Real R2, Real D, Real P, int* index);
-// void fill (const char* filename);
-// };
+
 
 REGISTER_SERIALIZABLE(Law2_ScGeom_CapillaryPhys_Capillarity1);
 
