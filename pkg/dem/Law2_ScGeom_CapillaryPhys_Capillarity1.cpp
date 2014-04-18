@@ -94,26 +94,23 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
     InteractionContainer::iterator ii = scene->interactions->begin();
     InteractionContainer::iterator iiEnd = scene->interactions->end();  
     if (IsPressureImposed ==false && TotalVolumeConstant==true) {
-    
-    Real p0=capillaryPressure;
-    Real slope;
-    Real eps=0.0000001;
-    Psolver(p0);
-    Real V0=waterVolume();
-
-    Real p1=capillaryPressure+0.1;
-    Psolver(p1);
-    Real V1=waterVolume();
-    while (abs(Real (VolumeofWater-V1))>eps){
-
-      slope= (p1-p0)/(V1-V0);
-      p0=p1;
-      V0=V1;
-      p1=p1-slope*(V1-VolumeofWater);
-      if (p1<0) {
-	cout<< "error" <<endl;
-	break;
-      }
+      Real p0=capillaryPressure;
+      Real slope;
+      Real eps=0.0000001;
+      Psolver(p0);
+      Real V0=waterVolume();
+      Real p1=capillaryPressure+0.1;
+      Psolver(p1);
+      Real V1=waterVolume();
+      while (abs(Real (VolumeofWater-V1))>eps){
+	slope= (p1-p0)/(V1-V0);
+	p0=p1;
+	V0=V1;
+	p1=p1-slope*(V1-VolumeofWater);
+	if (p1<0) {
+	  cout<< "error" <<endl;
+	  break;
+	  }
       Psolver(p1);
       V1=waterVolume();
       capillaryPressure=p1;
@@ -124,55 +121,52 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 }
 
     if (IsPressureImposed ==false && TotalVolumeConstant==false){
-     if (VolumeofWater==-1){
-      if (firstIteration==1){
-      Psolver(capillaryPressure);
-      firstIteration+=1;
-     
+      if (VolumeofWater==-1){
+	if (firstIteration==1){
+	  Psolver(capillaryPressure);
+	  firstIteration+=1;
+	} 
+	else{
+	  //        cout<< firstIteration <<endl;
+	  Vsolver();
+	}
       } 
-      else{
-//       cout<< firstIteration <<endl;
-      Vsolver();
-      }
-    } 
-     if (VolumeofWater!=-1){
-      if (firstIteration==1){
-          Real p0=capillaryPressure;
-          Real slope;
-          Real eps=0.0000001;
-          Psolver(p0);
-          Real V0=waterVolume();
-
-          Real p1=capillaryPressure+0.1;
-          Psolver(p1);
-          Real V1=waterVolume();
-          while (abs(Real (VolumeofWater-V1))>eps){
-
-              slope= (p1-p0)/(V1-V0);
-              p0=p1;
-              V0=V1;
-              p1=p1-slope*(V1-VolumeofWater);
-              if (p1<0) {
-	        cout<< "error" <<endl;
-	        break;
-              }
-            Psolver(p1);
-            V1=waterVolume();
-            capillaryPressure=p1;
-
-        }
-        Psolver(capillaryPressure);
-        firstIteration+=1;
-      } 
-      else{
-//       cout<< firstIteration <<endl;
-      Vsolver();
-      }
-    }
+      if (VolumeofWater!=-1){
+	if (firstIteration==1){
+	  Real p0=capillaryPressure;
+	  Real slope;
+	  Real eps=0.0000001;
+	  Psolver(p0);
+	  Real V0=waterVolume();
+	  Real p1=capillaryPressure+0.1;
+	  Psolver(p1);
+	  Real V1=waterVolume();
+	  while (abs(Real (VolumeofWater-V1))>eps){
+	    slope= (p1-p0)/(V1-V0);
+	    p0=p1;
+	    V0=V1;
+	    p1=p1-slope*(V1-VolumeofWater);
+	    if (p1<0) {
+	      cout<< "error" <<endl;
+	      break;
+	      }
+	    
+	    Psolver(p1);
+	    V1=waterVolume();
+	    capillaryPressure=p1;
+	    }
+	  Psolver(capillaryPressure);
+	  firstIteration+=1;
+	  } 
+        else{
+	  //       cout<< firstIteration <<endl;
+	  Vsolver();
+	  }
+	  
+}
  }
     if (IsPressureImposed ==true) {
-           
-    Psolver(capillaryPressure);
+      Psolver(capillaryPressure);
 
 
 }
@@ -586,7 +580,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
             else Vinterpol = mindlinContactPhysics->vMeniscus;
 //             if (!hertzOn) cundallContactPhysics->capillaryPressure = suction;
 //             else mindlinContactPhysics->capillaryPressure = suction;
-
+//             cout<< Vinterpol << Dinterpol << R2/R1 <<endl;
 /// Capillary solution finder:
             if ((hertzOn? mindlinContactPhysics->meniscus : cundallContactPhysics->meniscus)) {
 //int* currentIndexes = hertzOn? mindlinContactPhysics->currentIndexes : cundallContactPhysics->currentIndexes;
@@ -606,10 +600,10 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
 //FIXME: hardcoding numerical constants is bad practice generaly, and it probably reveals a flaw in that case (Bruno)
                 Real Pinterpol = solution.succion*R1/liquidTension;
 // 	         cout.precision(20);
-		 cout<< Pinterpol <<endl;
+// 		 cout<< Pinterpol <<endl;
 		
                 Real SInterface = solution.surface*pow(R1,2);
-// 		cout<< SInterface <<endl;
+//  		cout<< SInterface <<endl;
                 if (!hertzOn) { 
                     cundallContactPhysics->capillaryPressure = Pinterpol;
                     cundallContactPhysics->SInterface = SInterface;
@@ -640,5 +634,4 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
 
     }
     if (fusionDetection) checkFusion();
-
 }
