@@ -33,7 +33,7 @@ DT Law2_ScGeom_CapillaryPhys_Capillarity1::dtPbased;
 		if(!I->isReal()) continue;
 		CapillaryPhys1* phys = dynamic_cast<CapillaryPhys1*>(I->phys.get());
  		if(phys) {
-		  Real liquidTension=0.073; //why to declare it twice? any other way to do it?
+		  /*Real liquidTension=0.073;*/ //why to declare it twice? any other way to do it?
 		  //BC: declare it like capillaryPressure in hpp, and make it 0.073 by default. Then it can be modified by the user.
 			energy += liquidTension*phys->SInterface;}
 // 			energy += 0.5*(phys->normalForce.squaredNorm()/phys->kn + phys->shearForce.squaredNorm()/phys->ks);}
@@ -93,7 +93,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 {
     InteractionContainer::iterator ii = scene->interactions->begin();
     InteractionContainer::iterator iiEnd = scene->interactions->end();  
-    if (IsPressureImposed ==false && TotalVolumeConstant==true) {
+    if (!IsPressureImposed  && TotalVolumeConstant) {
       Real p0=capillaryPressure;
       Real slope;
       Real eps=0.0000001;
@@ -120,7 +120,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
     
 }
 
-    if (IsPressureImposed ==false && TotalVolumeConstant==false){
+    if (!IsPressureImposed  && TotalVolumeConstant){
       if (VolumeofWater==-1){
 	if (firstIteration==1){
 	  Psolver(capillaryPressure);
@@ -165,7 +165,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 	  
 }
  }
-    if (IsPressureImposed ==true) {
+    if (IsPressureImposed) {
       Psolver(capillaryPressure);
 
 
@@ -397,8 +397,8 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Psolver(Real suction)
 
             unsigned int id1 = interaction->getId1();
             unsigned int id2 = interaction->getId2();
-            Body* b1 = (*bodies)[id1].get();
-            Body* b2 = (*bodies)[id2].get();
+//             Body* b1 = (*bodies)[id1].get();
+//             Body* b2 = (*bodies)[id2].get();
 
 /// interaction geometry search (this test is to compute capillarity only between spheres (probably a better way to do that)
             int geometryIndex1 = (*bodies)[id1]->shape->getClassIndex(); // !!!
@@ -419,13 +419,14 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Psolver(Real suction)
             Real R1 = alpha*std::max(currentContactGeometry->radius2,currentContactGeometry->radius1);
             Real R2 =alpha*std::min(currentContactGeometry->radius2,currentContactGeometry->radius1);
 //             Real factor = std::max(R2/R1,1-R2/R1);
-	    R1 = R1-epsilon*R1;           
-            R2 =R2-epsilon*R2;
+	    R1 = R1-epsilon*R1;  
+	    R2 =R2-epsilon*R2;
            
 	    
 /// intergranular distance
-            Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2))+epsilon*(R1+R2); // scGeom->penetrationDepth could probably be used here?
-            if ((currentContactGeometry->penetrationDepth>=0)|| D<=0 || createDistantMeniscii) { //||(scene->iter < 1) ) // a simplified way to define meniscii everywhere
+//             Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2))+epsilon*(R1+R2); // scGeom->penetrationDepth could probably be used here?
+            Real D = alpha*(-(currentContactGeometry->penetrationDepth))+epsilon*(R1+R2);
+	    if ((currentContactGeometry->penetrationDepth>=0)|| D<=0 || createDistantMeniscii) { //||(scene->iter < 1) ) // a simplified way to define meniscii everywhere
 //                 D=0; // defines fCap when spheres interpenetrate. D<0 leads to wrong interpolation has D<0 has no solution in the interpolation : this is not physically interpretable!! even if, interpenetration << grain radius.
                 if (!hertzOn) {
                     if (fusionDetection && !cundallContactPhysics->meniscus) bodiesMenisciiList.insert((*ii));
@@ -530,8 +531,8 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
 
             unsigned int id1 = interaction->getId1();
             unsigned int id2 = interaction->getId2();
-            Body* b1 = (*bodies)[id1].get();
-            Body* b2 = (*bodies)[id2].get();
+//             Body* b1 = (*bodies)[id1].get();
+//             Body* b2 = (*bodies)[id2].get();
 
 /// interaction geometry search (this test is to compute capillarity only between spheres (probably a better way to do that)
             int geometryIndex1 = (*bodies)[id1]->shape->getClassIndex(); // !!!
@@ -542,10 +543,10 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
             ScGeom* currentContactGeometry = static_cast<ScGeom*>(interaction->geom.get());
 
 /// Capillary components definition:
-            Real liquidTension = 0.073; // superficial water tension at 20 Celsius degrees in N/m
+//             Real liquidTension = 0.073; // superficial water tension at 20 Celsius degrees in N/m
            
 /// the parameter that takes into account the rugosity of the particles. 
-            Real epsilon = 0;
+//             Real epsilon = 0;
 /// Interacting Grains:
 // If you want to define a ratio between YADE sphere size and real sphere size
             Real alpha=1;
@@ -556,8 +557,8 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
             R2 =R2-epsilon*R2;
 
 /// intergranular distance
-            Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2))+epsilon*(R1+R2); // scGeom->penetrationDepth could probably be used here?
-
+//             Real D = alpha*((b2->state->pos-b1->state->pos).norm()-(currentContactGeometry->radius1+ currentContactGeometry->radius2))+epsilon*(R1+R2); // scGeom->penetrationDepth could probably be used here?    
+ 	    Real D = alpha*(-(currentContactGeometry->penetrationDepth))+epsilon*(R1+R2);
             if ((currentContactGeometry->penetrationDepth>=0)|| D<=0 || createDistantMeniscii) { //||(scene->iter < 1) ) // a simplified way to define meniscii everywhere
 //                 D=0; // defines fCap when spheres interpenetrate. D<0 leads to wrong interpolation has D<0 has no solution in the interpolation : this is not physically interpretable!! even if, interpenetration << grain radius.
                 if (!hertzOn) {
@@ -574,7 +575,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
 
 /// Suction (Capillary pressure):
             Real Vinterpol = 0;
-            if (!hertzOn) { Vinterpol = cundallContactPhysics->vMeniscus*pow(R1,3);
+            if (!hertzOn) { Vinterpol = cundallContactPhysics->vMeniscus/pow(R1,3);
 // 	    cout<< Vinterpol <<endl;
 	    }
             else Vinterpol = mindlinContactPhysics->vMeniscus;
@@ -598,7 +599,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
 /// suction and interfacial area
 		
 //FIXME: hardcoding numerical constants is bad practice generaly, and it probably reveals a flaw in that case (Bruno)
-                Real Pinterpol = solution.succion*R1/liquidTension;
+                Real Pinterpol = solution.succion*liquidTension/R1;
 // 	         cout.precision(20);
 // 		 cout<< Pinterpol <<endl;
 		
@@ -607,12 +608,12 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::Vsolver()
                 if (!hertzOn) { 
                     cundallContactPhysics->capillaryPressure = Pinterpol;
                     cundallContactPhysics->SInterface = SInterface;
-//                     if (Vinterpol > 0) cundallContactPhysics->meniscus = true;
-//                     else cundallContactPhysics->meniscus = false;
+                    if (Vinterpol > 0) cundallContactPhysics->meniscus = true;
+                    else cundallContactPhysics->meniscus = false;
                 } else {
                     mindlinContactPhysics->capillaryPressure = Pinterpol;
-//                     if (Vinterpol > 0) mindlinContactPhysics->meniscus = true;
-//                     else mindlinContactPhysics->meniscus = false;
+                    if (Vinterpol > 0) mindlinContactPhysics->meniscus = true;
+                    else mindlinContactPhysics->meniscus = false;
                 }
                 if (!Vinterpol) {
                     if ((fusionDetection) || (hertzOn ? mindlinContactPhysics->isBroken : cundallContactPhysics->isBroken)) bodiesMenisciiList.remove((*ii));
