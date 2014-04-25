@@ -20,7 +20,7 @@
 #include<yade/pkg/common/ElastMat.hpp>
 #include<yade/pkg/dem/ViscoelasticPM.hpp>
 #include<yade/pkg/dem/CapillaryPhys.hpp>
-
+#include<yade/pkg/dem/CapillaryPhys1.hpp>
 #include<yade/pkg/common/Bo1_Sphere_Aabb.hpp>
 #include<yade/pkg/common/Bo1_Box_Aabb.hpp>
 #include<yade/pkg/dem/NewtonIntegrator.hpp>
@@ -788,7 +788,7 @@ Matrix3r Shop::getCapillaryStress(Real volume){
 		if (!I->isReal()) continue;
 		shared_ptr<Body> b1 = Body::byId(I->getId1(),scene);
 		shared_ptr<Body> b2 = Body::byId(I->getId2(),scene);
-		CapillaryPhys* nsi=YADE_CAST<CapillaryPhys*> ( I->phys.get() );
+		CapillaryPhys1* nsi=YADE_CAST<CapillaryPhys1*> ( I->phys.get() );
 		Vector3r branch=b1->state->pos -b2->state->pos;
 		if (isPeriodic) branch-= scene->cell->hSize*I->cellDist.cast<Real>();
 		stressTensor += (nsi->fCap)*branch.transpose();

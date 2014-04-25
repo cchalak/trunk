@@ -77,19 +77,4 @@ class CapillaryPhys1 : public FrictPhys
 };
 REGISTER_SERIALIZABLE(CapillaryPhys1);
 
-// class EnergeticCapillaryPhys : public CapillaryPhys1
-// {
-// 	public :
-// 		int currentIndexes [4]; // used for faster interpolation (stores previous positions in tables)
-// 		
-// 		virtual ~EnergeticCapillaryPhys();
-// 
-// 	YADE_CLASS_BASE_DOC_ATTRS_CTOR(EnergeticCapillaryPhys,CapillaryPhys1,"Physics (of interaction) for Law2_ScGeom_CapillaryPhys_Capillarity.",
-// 				
-// 				 ((Real,SInterface,0.,,"Fluid-Gaz Interfacial area"))
-// 				 ((Real,arcLength,0.,,"Arc Length of the Fluid-Gaz Interface"))
-// 				 ,createIndex();
-// 				 );
-// 	REGISTER_CLASS_INDEX(EnergeticCapillaryPhys,CapillaryPhys1);
-// };
-// REGISTER_SERIALIZABLE(EnergeticCapillaryPhys);
+
