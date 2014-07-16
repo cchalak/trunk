@@ -85,6 +85,7 @@ public :
     static DT dtVbased;
     static DT dtPbased;
     std::vector<MeniscusPhysicalData> solutions;
+    int switchTriangulation;//to detect switches between P-based and V-based data
 
 
     BodiesMenisciiList1 bodiesMenisciiList;
@@ -92,7 +93,7 @@ public :
     void action();
      Real intEnergy();
      Real waterVolume();
-     void solver(Real suction);
+     void solver(Real suction, bool reset);
 //     {return 0;}
 //     void postLoad(Law2_ScGeom_CapillaryPhys_Capillarity1&);
     void triangulateData();
@@ -111,7 +112,7 @@ public :
                    ((bool,createDistantMeniscii,false,,"Generate meniscii between distant spheres? Else only maintain the existing one. For modeling a wetting path this flag should always be false. For a drying path it should be true for one step (initialization) then false, as in the logic of [Scholtes2009c]_"))
                    ((bool,imposePressure,true,," If True, suction is imposed and is constant if not Volume is imposed-Undrained test"))   
 		  ((bool,totalVolumeConstant,true,," in undrained test there are 2 options, If True, the total volume of water is imposed,if false the volume of each meniscus is kept constant: in this case capillary pressure can be imposed for initial distribution of meniscus or it is the total volume that can be imposed initially")) 
-		   ,,
+		   ,switchTriangulation=-1,
 		  .def("intEnergy",&Law2_ScGeom_CapillaryPhys_Capillarity1::intEnergy,"define the energy of interfaces in unsaturated pendular state")
 		  .def("waterVolume",&Law2_ScGeom_CapillaryPhys_Capillarity1::waterVolume,"return the total value of water in the sample")
      );

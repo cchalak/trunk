@@ -91,11 +91,12 @@ int x=0;
 
 void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 {
-
+    bool switched = (switchTriangulation == (imposePressure or totalVolumeConstant));
+    switchTriangulation = (imposePressure or totalVolumeConstant);
     InteractionContainer::iterator ii = scene->interactions->begin();
     InteractionContainer::iterator iiEnd = scene->interactions->end();  
     if (imposePressure) {
-      solver(capillaryPressure);
+      solver(capillaryPressure,switched);
     }
     else{
       if (((totalVolumeConstant || (!totalVolumeConstant && firstIteration==1)) && totalVolumeofWater!=-1) || (totalVolumeConstant && totalVolumeofWater==-1))
@@ -105,14 +106,14 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
 	Real p0=capillaryPressure;
 	Real slope;
 	Real eps=0.0000001;
-	solver(p0);
+	solver(p0,switched);
 	Real V0=waterVolume();
 	if (totalVolumeConstant && totalVolumeofWater==-1 && firstIteration==1){
 	  totalVolumeofWater=V0;
 	  firstIteration+=1;
 	}
 	Real p1=capillaryPressure+0.1;
-	solver(p1);
+	solver(p1,switched);
 	Real V1=waterVolume();
 	while (abs((totalVolumeofWater-V1))>eps){
 	  slope= (p1-p0)/(V1-V0);
@@ -125,7 +126,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
  	    imposePressure=1;
  	    break;
 	  }
-	  solver(p1);
+	  solver(p1,switched);
 	  V1=waterVolume();
 	  capillaryPressure=p1;
 	}
@@ -137,13 +138,13 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::action()
       else{
 	if ((!totalVolumeConstant && firstIteration==1) && totalVolumeofWater==-1){
 	  totalVolumeConstant=1;
-	  solver(capillaryPressure);
+	  solver(capillaryPressure,switched);
 	  firstIteration+=1;
 	  totalVolumeConstant=0;
 	}
 	else 
 	{ 
-	  solver(capillaryPressure);
+	  solver(capillaryPressure,switched);
 	}
 
       }
@@ -344,7 +345,7 @@ BodiesMenisciiList1::BodiesMenisciiList1()
     initialized=false;
 }
 
-void Law2_ScGeom_CapillaryPhys_Capillarity1::solver(Real suction)
+void Law2_ScGeom_CapillaryPhys_Capillarity1::solver(Real suction,bool reset)
 {
      
     if (!scene) cerr << "scene not defined!";
@@ -416,7 +417,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::solver(Real suction)
 	      else mindlinContactPhysics->capillaryPressure = suction;
 	      /// Capillary solution finder:
 	      if ((Pinterpol>=0) && (hertzOn? mindlinContactPhysics->meniscus : cundallContactPhysics->meniscus)) {
-		MeniscusPhysicalData solution = interpolate1(dtPbased,K::Point_3(R2/R1, Pinterpol, Dinterpol), cundallContactPhysics->m, solutions);
+		MeniscusPhysicalData solution = interpolate1(dtPbased,K::Point_3(R2/R1, Pinterpol, Dinterpol), cundallContactPhysics->m, solutions,reset);
 /// capillary adhesion force
 		Real Finterpol = solution.force;
 		Vector3r fCap = Finterpol*R1*liquidTension*currentContactGeometry->normal;
@@ -458,7 +459,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::solver(Real suction)
 	      else Vinterpol = mindlinContactPhysics->vMeniscus;
 	      /// Capillary solution finder:
 	      if ((hertzOn? mindlinContactPhysics->meniscus : cundallContactPhysics->meniscus)) {
-		MeniscusPhysicalData solution = interpolate2(dtVbased,K::Point_3(R2/R1, Vinterpol, Dinterpol), cundallContactPhysics->m, solutions);
+		MeniscusPhysicalData solution = interpolate2(dtVbased,K::Point_3(R2/R1, Vinterpol, Dinterpol), cundallContactPhysics->m, solutions,reset);
 /// capillary adhesion force
 	        Real Finterpol = solution.force;
                 Vector3r fCap = Finterpol*R1*liquidTension*currentContactGeometry->normal;

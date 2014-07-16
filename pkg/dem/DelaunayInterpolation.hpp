@@ -110,7 +110,6 @@ getIncidentVtxWeights(const Dt& dt,
 } //END NAMESPACE CGAL
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-// typedef CGAL::Simple_cartesian<double>				K;
 typedef CGAL::Delaunay_triangulation_3<K>::Geom_traits		Traits;
 typedef CGAL::Triangulation_vertex_base_with_id_3<Traits>	Vb;
 typedef CGAL::Triangulation_cell_base_3<Traits>			Cb;
@@ -119,12 +118,12 @@ typedef CGAL::Delaunay_triangulation_3<Traits,Tds>		DT;
 typedef std::vector< std::pair< DT::Vertex_handle, K::FT> >	Vertex_weight_vector;
 
 template <class Dt, class DataOwner>
-typename DataOwner::Data interpolate1 (const Dt& dt, const typename Dt::Geom_traits::Point_3& Q, DataOwner& owner, const std::vector<typename DataOwner::Data>& rawData)
+typename DataOwner::Data interpolate1 (const Dt& dt, const typename Dt::Geom_traits::Point_3& Q, DataOwner& owner, const std::vector<typename DataOwner::Data>& rawData, bool reset)
 {
     K::FT norm;
     Vertex_weight_vector coords;
-    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , owner.cell);
-
+    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , reset? dt.cells_begin() : owner.cell);
+    
     typename DataOwner::Data data = typename DataOwner::Data();//initialize null solution
     if (!result.third) return data;// out of the convex hull, we return the null solution
     //else, we compute the weighted sum
@@ -133,11 +132,11 @@ typename DataOwner::Data interpolate1 (const Dt& dt, const typename Dt::Geom_tra
     else return typename DataOwner::Data();
 }
 template <class Dt, class DataOwner>
-typename DataOwner::Data interpolate2 (const Dt& dt, const typename Dt::Geom_traits::Point_3& Q, DataOwner& owner, const std::vector<typename DataOwner::Data>& rawData)
+typename DataOwner::Data interpolate2 (const Dt& dt, const typename Dt::Geom_traits::Point_3& Q, DataOwner& owner, const std::vector<typename DataOwner::Data>& rawData, bool reset)
 {
     K::FT norm;
     Vertex_weight_vector coords;
-    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , owner.cell);
+    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , reset? dt.cells_begin() : owner.cell);
 
     typename DataOwner::Data data = typename DataOwner::Data();//initialize null solution
     if (!result.third) return data;// out of the convex hull, we return the null solution
