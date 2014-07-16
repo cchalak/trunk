@@ -129,7 +129,8 @@ typename DataOwner::Data interpolate1 (const Dt& dt, const typename Dt::Geom_tra
     if (!result.third) return data;// out of the convex hull, we return the null solution
     //else, we compute the weighted sum
     for (unsigned int k=0; k<coords.size(); k++) data += (rawData[coords[k].first->id()]*coords[k].second);
-    return data*(1./result.second);
+    if (!data.ending) return data*(1./result.second);
+    else return typename DataOwner::Data();
 }
 template <class Dt, class DataOwner>
 typename DataOwner::Data interpolate2 (const Dt& dt, const typename Dt::Geom_traits::Point_3& Q, DataOwner& owner, const std::vector<typename DataOwner::Data>& rawData)
@@ -142,6 +143,7 @@ typename DataOwner::Data interpolate2 (const Dt& dt, const typename Dt::Geom_tra
     if (!result.third) return data;// out of the convex hull, we return the null solution
     //else, we compute the weighted sum
     for (unsigned int k=0; k<coords.size(); k++) data += (rawData[coords[k].first->id()]*coords[k].second);
-    return data*(1./result.second);
+    if (!data.ending) return data*(1./result.second);
+    else return typename DataOwner::Data();
 }
 

@@ -62,9 +62,8 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::triangulateData() {
     // convention R,v,d,s,e,f,p,a1,a2,dummy (just for the example, define your own,
     // dummy is because has too much values per line - with one useless extra colum,)
     MeniscusPhysicalData dat;
-    double dummy;
     while ( file.good() ) {
-        file >>dat.succion>>dat.force>>dat.distance>>dat.volume>>dat.surface>>dat.arcLength>>dat.delta1>>dat.delta2>>dat.R>>dummy;
+        file >>dat.succion>>dat.force>>dat.distance>>dat.volume>>dat.surface>>dat.arcLength>>dat.delta1>>dat.delta2>>dat.R>>dat.ending;
         solutions.push_back(dat);
     }
     file.close();

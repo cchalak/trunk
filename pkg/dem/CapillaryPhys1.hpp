@@ -21,23 +21,24 @@ public:
     double delta1;
     double delta2;
     double arcLength;
+    bool ending;
     //default ctor
-    MeniscusPhysicalData() : R(0), volume(0), distance(0), surface(0), energy(0), force(0), succion(0), delta1(0), delta2(0), arcLength(0)  {}
+    MeniscusPhysicalData() : R(0), volume(0), distance(0), surface(0), energy(0), force(0), succion(0), delta1(0), delta2(0), arcLength(0), ending(1)  {}
     //ctor with input values
-    MeniscusPhysicalData(const double& r, const double& v, const double& d, const double& s, const double& e, const double& f, const double& p, const double& a1, const double& a2, const double& arc) : R(r), volume(v), distance(d), surface(s), energy(e), force(f), succion(p), delta1(a1), delta2(a2), arcLength(arc){}
+    MeniscusPhysicalData(const double& r, const double& v, const double& d, const double& s, const double& e, const double& f, const double& p, const double& a1, const double& a2, const double& arc, bool end) : R(r), volume(v), distance(d), surface(s), energy(e), force(f), succion(p), delta1(a1), delta2(a2), arcLength(arc), ending(end) {}
 
     //a minimal list of operators for the interpolation
     //these operators are requirements for the DataType template parameter of interpolate()
     //FIXME: algebra operations must include energy, perimeter, and any other new variable for including them in the interpolation
     MeniscusPhysicalData& operator+= (const MeniscusPhysicalData& m2) {
-        R+=m2.R; volume+=m2.volume; distance+=m2.distance; surface+=m2.surface; energy+=m2.energy; force+=m2.force; succion+=m2.succion; delta1+=m2.delta1; delta2+=m2.delta2;
+        R+=m2.R; volume+=m2.volume; distance+=m2.distance; surface+=m2.surface; energy+=m2.energy; force+=m2.force; succion+=m2.succion; delta1+=m2.delta1; delta2+=m2.delta2; arcLength+=m2.arcLength; ending=(ending && m2.ending);
         return *this;}
 
     MeniscusPhysicalData operator* (const double& fact) const {
-        return MeniscusPhysicalData(fact*R, fact*volume, fact*distance, fact*surface, fact*energy, fact*force, fact*succion, fact*delta1, fact*delta2, fact*arcLength);}
+        return MeniscusPhysicalData(fact*R, fact*volume, fact*distance, fact*surface, fact*energy, fact*force, fact*succion, fact*delta1, fact*delta2, fact*arcLength, ending);}
 
     const MeniscusPhysicalData& operator= (const MeniscusPhysicalData& m1) {
-        R=m1.R; volume=m1.volume; distance=m1.distance; surface=m1.surface; energy=m1.energy; force=m1.force; succion=m1.succion; delta1=m1.delta1; delta2=m1.delta2; arcLength=m1.arcLength;
+        R=m1.R; volume=m1.volume; distance=m1.distance; surface=m1.surface; energy=m1.energy; force=m1.force; succion=m1.succion; delta1=m1.delta1; delta2=m1.delta2; arcLength=m1.arcLength; ending=m1.ending;
         return *this;}
 };
 
