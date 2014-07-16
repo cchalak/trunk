@@ -417,7 +417,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::solver(Real suction,bool reset)
 	      else mindlinContactPhysics->capillaryPressure = suction;
 	      /// Capillary solution finder:
 	      if ((Pinterpol>=0) && (hertzOn? mindlinContactPhysics->meniscus : cundallContactPhysics->meniscus)) {
-		MeniscusPhysicalData solution = interpolate1(dtPbased,K::Point_3(R2/R1, Pinterpol, Dinterpol), cundallContactPhysics->m, solutions,reset);
+		MeniscusPhysicalData solution = interpolate1(dtPbased,K::Point_3(R2/R1, Pinterpol, Dinterpol), cundallContactPhysics->m, solutions, reset);
 /// capillary adhesion force
 		Real Finterpol = solution.force;
 		Vector3r fCap = Finterpol*R1*liquidTension*currentContactGeometry->normal;

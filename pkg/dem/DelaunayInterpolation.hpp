@@ -123,7 +123,7 @@ typename DataOwner::Data interpolate1 (const Dt& dt, const typename Dt::Geom_tra
     K::FT norm;
     Vertex_weight_vector coords;    
     if (reset) owner.cell = dt.cells_begin();
-    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , reset? dt.cells_begin() : owner.cell);
+    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , owner.cell);
      
     typename DataOwner::Data data = typename DataOwner::Data();//initialize null solution
     if (!result.third) return data;// out of the convex hull, we return the null solution
@@ -138,7 +138,7 @@ typename DataOwner::Data interpolate2 (const Dt& dt, const typename Dt::Geom_tra
     K::FT norm;
     Vertex_weight_vector coords;
     if (reset) owner.cell = dt.cells_begin();
-    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , reset? dt.cells_begin() : owner.cell);
+    CGAL::Triple<std::back_insert_iterator<Vertex_weight_vector>,K::FT, bool> result = CGAL::getIncidentVtxWeights(dt, Q,std::back_inserter(coords), norm, owner.normals , owner.cell);
 
     typename DataOwner::Data data = typename DataOwner::Data();//initialize null solution
     if (!result.third) return data;// out of the convex hull, we return the null solution
