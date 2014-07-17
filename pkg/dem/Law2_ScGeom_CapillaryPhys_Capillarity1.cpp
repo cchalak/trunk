@@ -62,8 +62,10 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::triangulateData() {
     // convention R,v,d,s,e,f,p,a1,a2,dummy (just for the example, define your own,
     // dummy is because has too much values per line - with one useless extra colum,)
     MeniscusPhysicalData dat;
-    while ( file.good() ) {
-        file >>dat.succion>>dat.force>>dat.distance>>dat.volume>>dat.surface>>dat.arcLength>>dat.delta1>>dat.delta2>>dat.R>>dat.ending;
+    double ending;
+    while ( file.good() ) {     
+        file >>dat.succion>>dat.force>>dat.distance>>dat.volume>>dat.surface>>dat.arcLength>>dat.delta1>>dat.delta2>>dat.R>>ending;
+	dat.ending=(bool) ending;
         solutions.push_back(dat);
     }
     file.close();
@@ -439,7 +441,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::solver(Real suction,bool reset)
                 }
                 if (!Vinterpol) {
                     if ((fusionDetection) || (hertzOn ? mindlinContactPhysics->isBroken : cundallContactPhysics->isBroken)) bodiesMenisciiList.remove((*ii));
-                    if (D>0) scene->interactions->requestErase(interaction);
+		    if (D>((interactionDetectionFactor-1)*(currentContactGeometry->radius2+currentContactGeometry->radius1))) scene->interactions->requestErase(interaction);
                 }
 /// wetting angles
                 if (!hertzOn) {
@@ -482,7 +484,7 @@ void Law2_ScGeom_CapillaryPhys_Capillarity1::solver(Real suction,bool reset)
                 }
                 if (!Vinterpol) {
                     if ((fusionDetection) || (hertzOn ? mindlinContactPhysics->isBroken : cundallContactPhysics->isBroken)) bodiesMenisciiList.remove((*ii));
-                    if (D>0) scene->interactions->requestErase(interaction);
+                    if (D>((interactionDetectionFactor-1)*(currentContactGeometry->radius2+currentContactGeometry->radius1))) scene->interactions->requestErase(interaction);
                 }
 /// wetting angles
                 if (!hertzOn) {

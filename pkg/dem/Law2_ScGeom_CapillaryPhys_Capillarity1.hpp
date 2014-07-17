@@ -104,6 +104,7 @@ public :
 		  ((Real,totalVolumeofWater,-1.,,"Value of imposed water volume"))
 		  ((Real,liquidTension,0.073,,"Value of the superficial water tension in N/m"))
 		  ((Real,epsilon,0.,,"Value of the rugosity"))
+		  ((Real,interactionDetectionFactor,1.5,,"defines critical distance for deleting interactions. Must be consistent with the Ig2 value."))
                    ((bool,fusionDetection,false,,"If true potential menisci overlaps are checked"))
                    ((bool,initialized,false,," "))
                    ((bool,binaryFusion,true,,"If true, capillary forces are set to zero as soon as, at least, 1 overlap (menisci fusion) is detected"))
