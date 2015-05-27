@@ -20,7 +20,10 @@ class Ip2_FrictMat_FrictMat_CapillaryPhys1 : public IPhysFunctor
 					const shared_ptr<Interaction>& interaction);
 
 	FUNCTOR2D(FrictMat,FrictMat);
-	YADE_CLASS_BASE_DOC_ATTRS_CTOR(Ip2_FrictMat_FrictMat_CapillaryPhys1,IPhysFunctor, "RelationShips to use with Law2_ScGeom_CapillaryPhys_Capillarity1\n\n In these RelationShips all the interaction attributes are computed. \n\n.. warning::\n\tas in the others :yref:`Ip2 functors<IPhysFunctor>`, most of the attributes are computed only once, when the interaction is new.",,;);
+	YADE_CLASS_BASE_DOC_ATTRS_CTOR(Ip2_FrictMat_FrictMat_CapillaryPhys1,IPhysFunctor, "RelationShips to use with Law2_ScGeom_CapillaryPhys_Capillarity1\n\n In these RelationShips all the interaction attributes are computed. \n\n.. warning::\n\tas in the others :yref:`Ip2 functors<IPhysFunctor>`, most of the attributes are computed only once, when the interaction is new.",
+				       ((bool,computeDefault,true,,"bool to assign the default value of computeBridge.")),;
+	  
+	);
 	
 };
 REGISTER_SERIALIZABLE(Ip2_FrictMat_FrictMat_CapillaryPhys1);
